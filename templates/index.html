@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio - Online Sports{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Hero Section -->
+    <div class="col-12 mb-4">
+        <div class="hero-section bg-primary text-white p-5 rounded">
+            <h1 class="display-4">Bienvenido a Online Sports</h1>
+            <p class="lead">Tu destino para resultados en vivo, noticias y mucho más.</p>
+        </div>
+    </div>
+
+    <!-- Partidos en Vivo -->
+    <div class="col-md-6">
+        <h3>⚽ Partidos en Vivo</h3>
+        <div class="list-group">
+            {% for partido in partidos %}
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <strong>{{ partido.equipo_local }} vs {{ partido.equipo_visitante }}</strong>
+                        <br>
+                        <small class="text-muted">{{ partido.deporte }} | {{ partido.liga }}</small>
+                    </div>
+                    <div class="text-end">
+                        {% if partido.estado == 'en_vivo' %}
+                            <span class="badge bg-danger">EN VIVO</span>
+                            <br>
+                            <strong>{{ partido.resultado_local }} - {{ partido.resultado_visitante }}</strong>
+                        {% else %}
+                            <span class="badge bg-warning">Próximo</span>
+                            <br>
+                            <small>{{ partido.fecha_hora.strftime('%H:%M') }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="list-group-item">
+                No hay partidos en este momento
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Últimas Noticias -->
+    <div class="col-md-6">
+        <h3>📰 Últimas Noticias</h3>
+        {% for noticia in noticias %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">{{ noticia.titulo }}</h5>
+                <p class="card-text">{{ noticia.contenido[:100] }}...</p>
+                <div class="d-flex justify-content-between">
+                    <span class="badge bg-secondary">{{ noticia.deporte }}</span>
+                    <small class="text-muted">{{ noticia.fecha_publicacion.strftime('%d/%m/%Y') }}</small>
+                </div>
+                <a href="{{ url_for('noticia_detalle', noticia_id=noticia.id) }}" class="btn btn-primary btn-sm mt-2">Leer más</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Deportes Disponibles -->
+<div class="row mt-4">
+    <div class="col-12">
+        <h3>🏀 Deportes</h3>
+        <div class="row">
+            <div class="col-md-2 col-6 mb-3">
+                <a href="{{ url_for('deportes') }}?deporte=futbol" class="btn btn-outline-primary w-100">Fútbol</a>
+            </div>
+            <div class="col-md-2 col-6 mb-3">
+                <a href="{{ url_for('deportes') }}?deporte=baloncesto" class="btn btn-outline-primary w-100">Baloncesto</a>
+            </div>
+            <div class="col-md-2 col-6 mb-3">
+                <a href="{{ url_for('deportes') }}?deporte=tenis" class="btn btn-outline-primary w-100">Tenis</a>
+            </div>
+            <div class="col-md-2 col-6 mb-3">
+                <a href="{{ url_for('deportes') }}?deporte=formula1" class="btn btn-outline-primary w-100">Fórmula 1</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
