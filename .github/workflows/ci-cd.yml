@@ -35,6 +35,31 @@ jobs:
         run: |
           python -m py_compile app.py
 
+    # ===========================
+  # JOB 2: DEPLOY FRONTEND (CD)
+  # ===========================
+  deploy_frontend:
+    needs: ci
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Descargar artefacto del frontend
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist
+
+      - name: Deploy a GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+
   # ===========================
   # JOB 2: BUILD & PUSH DOCKER
   # ===========================
