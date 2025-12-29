@@ -76,7 +76,7 @@ def agregar_datos_ejemplo():
             print("✅ Datos agregados exitosamente!")
 
         except Exception as e:
-            print(f"❌ Error: {e}")
+            print(f"❌ Error : {e}")
             db.session.rollback()
 
 if __name__ == "__main__":

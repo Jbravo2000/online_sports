@@ -10,36 +10,77 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">🏆 Online Sports</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" title="Menú de navegación">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                🏆 Online Sports
+            </a>
+            
+            <button class="navbar-toggler" type="button" 
+                    data-bs-toggle="collapse" 
+                    data-bs-target="#navbarNav"
+                    aria-label="Menú de navegación">
                 <span class="navbar-toggler-icon"></span>
             </button>
+            
             <div class="collapse navbar-collapse" id="navbarNav">
+                <!-- Menú principal - SIN "NOTICIAS" -->
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('index') }}">Inicio</a>
+                        <a class="nav-link" href="{{ url_for('index') }}" 
+                           title="Ir a la página de inicio">
+                            Inicio
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('deportes') }}">Deportes</a>
+                        <a class="nav-link" href="{{ url_for('deportes') }}" 
+                           title="Ver todos los deportes">
+                            Deportes
+                        </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('noticias') }}">Noticias</a>
-                    </li>
+                    <!-- "NOTICIAS" HA SIDO ELIMINADO DE AQUÍ -->
                 </ul>
+                
+                <!-- Barra de búsqueda -->
+                <form class="d-flex mx-3" action="{{ url_for('buscar') }}" method="GET">
+                    <div class="input-group">
+                        <input type="search" 
+                               name="q" 
+                               class="form-control form-control-sm" 
+                               placeholder="Buscar..." 
+                               value="{{ request.args.get('q', '') }}"
+                               aria-label="Buscar en Online Sports">
+                        <button class="btn btn-outline-light btn-sm" type="submit"
+                                title="Ejecutar búsqueda">
+                            🔍
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Menú de usuario -->
                 <ul class="navbar-nav">
                 {% if current_user.is_authenticated %}
                     <li class="nav-item">
-                        <span class="navbar-text">Hola, {{ current_user.username }}</span>
+                        <span class="navbar-text">
+                            Hola, {{ current_user.username }}
+                        </span>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('logout') }}">Cerrar Sesión</a>
+                        <a class="nav-link" href="{{ url_for('logout') }}"
+                           title="Cerrar sesión">
+                            Cerrar Sesión
+                        </a>
                     </li>
                 {% else %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('login') }}">Iniciar Sesión</a>
+                        <a class="nav-link" href="{{ url_for('login') }}"
+                           title="Iniciar sesión en tu cuenta">
+                            Iniciar Sesión
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('registro') }}">Registrarse</a>
+                        <a class="nav-link" href="{{ url_for('registro') }}"
+                           title="Crear una nueva cuenta">
+                            Registrarse
+                        </a>
                     </li>
                 {% endif %}
                 </ul>
@@ -53,7 +94,8 @@
                 {% for category, message in messages %}
                     <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
                         {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" title="Cerrar"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" 
+                                title="Cerrar mensaje"></button>
                     </div>
                 {% endfor %}
             {% endif %}

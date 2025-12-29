@@ -16,7 +16,7 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# Modelos
+# Modelos (actualizados con campo destacada en Noticia)
 class Usuario(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -33,6 +33,7 @@ class Noticia(db.Model):
     imagen_url = db.Column(db.String(300))
     fecha_publicacion = db.Column(db.DateTime, default=datetime.utcnow)
     autor = db.Column(db.String(100))
+    #destacada = db.Column(db.Boolean, default=False)  # Campo agregado para búsqueda
 
 class Partido(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -44,6 +45,7 @@ class Partido(db.Model):
     resultado_local = db.Column(db.Integer)
     resultado_visitante = db.Column(db.Integer)
     estado = db.Column(db.String(20))  # 'programado', 'en_vivo', 'finalizado'
+   # estadio = db.Column(db.String(200))  # Campo agregado para consistencia
 
 class Producto(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -58,7 +60,78 @@ class Producto(db.Model):
 def load_user(user_id):
     return Usuario.query.get(int(user_id))
 
-# Rutas
+# RUTA DE BÚSQUEDA - AGREGADA AQUÍ
+@app.route('/buscar')
+def buscar():
+    """Ruta para búsqueda global en la aplicación"""
+    query = request.args.get('q', '').strip()
+    tipo = request.args.get('tipo', 'todo')  # 'todo', 'noticias', 'partidos', 'productos'
+    
+    if not query:
+        # Mostrar página de búsqueda vacía
+        return render_template('buscar.html', 
+                             query=query,
+                             tipo=tipo,
+                             resultados_noticias=[],
+                             resultados_partidos=[],
+                             resultados_productos=[],
+                             total_resultados=0)
+    
+    resultados_noticias = []
+    resultados_partidos = []
+    resultados_productos = []
+    
+    # Buscar en noticias si es 'todo' o 'noticias'
+    if tipo in ['todo', 'noticias']:
+        resultados_noticias = Noticia.query.filter(
+            db.or_(
+                Noticia.titulo.ilike(f'%{query}%'),
+                Noticia.contenido.ilike(f'%{query}%'),
+                Noticia.deporte.ilike(f'%{query}%'),
+                Noticia.autor.ilike(f'%{query}%')
+            )
+        ).order_by(Noticia.fecha_publicacion.desc()).all()
+    
+    # Buscar en partidos si es 'todo' o 'partidos'
+    if tipo in ['todo', 'partidos']:
+        resultados_partidos = Partido.query.filter(
+            db.or_(
+                Partido.equipo_local.ilike(f'%{query}%'),
+                Partido.equipo_visitante.ilike(f'%{query}%'),
+                Partido.deporte.ilike(f'%{query}%'),
+                Partido.liga.ilike(f'%{query}%'),
+                Partido.estadio.ilike(f'%{query}%')
+            )
+        ).order_by(Partido.fecha_hora).all()
+    
+    # Buscar en productos si es 'todo' o 'productos'
+    if tipo in ['todo', 'productos']:
+        resultados_productos = Producto.query.filter(
+            db.or_(
+                Producto.nombre.ilike(f'%{query}%'),
+                Producto.descripcion.ilike(f'%{query}%'),
+                Producto.categoria.ilike(f'%{query}%')
+            )
+        ).all()
+    
+    total_resultados = len(resultados_noticias) + len(resultados_partidos) + len(resultados_productos)
+    
+    return render_template('buscar.html',
+                         query=query,
+                         tipo=tipo,
+                         resultados_noticias=resultados_noticias,
+                         resultados_partidos=resultados_partidos,
+                         resultados_productos=resultados_productos,
+                         total_resultados=total_resultados)
+
+# Rutas existentes (se mantienen igual hasta...)
+@app.route('/')
+def index():
+    noticias = Noticia.query.order_by(Noticia.fecha_publicacion.desc()).limit(6).all()
+    partidos = Partido.query.filter(Partido.estado.in_(['en_vivo', 'programado'])).order_by(Partido.fecha_hora).limit(5).all()
+    productos = Producto.query.limit(4).all()
+    return render_template('index.html', noticias=noticias, partidos=partidos, productos=productos)
+
 @app.route('/agregar-datos-deportes')
 def agregar_datos_deportes():
     """Ruta para agregar datos específicos de deportes"""
@@ -93,7 +166,7 @@ def agregar_datos_deportes():
                 contenido="LeBron James se convierte en el primer jugador en la historia de la NBA en superar la barrera de los 40,000 puntos en temporada regular. Un hito histórico para el Rey.",
                 deporte="baloncesto",
                 autor="Ana López",
-                destacada=True
+                #destacada=True
             ),
             Noticia(
                 titulo="Los Warriors regresan a la final de conferencia",
@@ -259,12 +332,7 @@ def agregar_datos_deportes():
 
     except Exception as e:
         return f"<h1>❌ Error al agregar datos:</h1><p>{str(e)}</p>"
-@app.route('/')
-def index():
-    noticias = Noticia.query.order_by(Noticia.fecha_publicacion.desc()).limit(6).all()
-    partidos = Partido.query.filter(Partido.estado.in_(['en_vivo', 'programado'])).order_by(Partido.fecha_hora).limit(5).all()
-    productos = Producto.query.limit(4).all()
-    return render_template('index.html', noticias=noticias, partidos=partidos, productos=productos)
+
 @app.route('/agregar-noticia', methods=['GET', 'POST'])
 @login_required
 def agregar_noticia():
@@ -306,6 +374,7 @@ def agregar_partido():
             fecha = request.form['fecha']
             hora = request.form['hora']
             estado = request.form['estado']
+            #estadio = request.form.get('estadio', '')
 
             # Combinar fecha y hora
             fecha_hora = datetime.strptime(f"{fecha} {hora}", "%Y-%m-%d %H:%M")
@@ -316,7 +385,8 @@ def agregar_partido():
                 deporte=deporte,
                 liga=liga,
                 fecha_hora=fecha_hora,
-                estado=estado
+                estado=estado,
+                #estadio=estadio
             )
 
             db.session.add(nuevo_partido)
@@ -328,6 +398,7 @@ def agregar_partido():
             flash(f'Error al agregar partido: {str(e)}', 'error')
 
     return render_template('agregar_partido.html')
+
 @app.route('/deportes')
 def deportes():
     deporte = request.args.get('deporte', '')
@@ -344,6 +415,7 @@ def deportes():
 def noticias():
     noticias_lista = Noticia.query.order_by(Noticia.fecha_publicacion.desc()).all()
     return render_template('noticias.html', noticias=noticias_lista)
+
 @app.route('/debug-noticias')
 def debug_noticias():
     """Ruta para debug - verificar que las noticias existen"""
@@ -360,6 +432,7 @@ def debug_noticias():
         return jsonify(resultado)
     except Exception as e:
         return f"Error: {e}"
+
 @app.route('/noticia/<int:noticia_id>')
 def noticia_detalle(noticia_id):
     noticia = Noticia.query.get_or_404(noticia_id)
